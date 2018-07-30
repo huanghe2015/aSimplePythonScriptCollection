@@ -5,6 +5,10 @@
 本脚本的功能是利用requests获取哔哩哔哩网站的某位UP主的所有视频，然后调用命令行的you-get模块下载视频
 大致步骤：输入UP主的个人空间地址，例如https://space.bilibili.com/28152409/#/video?page=3（末尾为页面位置），脚本通过定位最后一页的数字来确定总页数，然后逐步翻页，获取每一页所有视频的具体地址
 '''
+'''
+更新日志
+2018-07-30：试图添加多线程支持
+'''
 import requests
 import json
 import os
@@ -36,10 +40,12 @@ def main():
     if newFileName == "":
         newFileName = fileName
     print(avURLArray)
-    #执行完成之后，自动关机（因为需要消耗的时间）
-    os.system("shutdown /s")#Windows使用，其他操作系统自行参考
+    # 执行完成之后，自动关机（因为需要消耗的时间）
+    os.system("shutdown /s")  # Windows使用，其他操作系统自行参考
 
 # 检测页面总数
+
+
 def getTotalPage(spaceID):
     getDataObject = getDataJSON(spaceID, 1)
     getPageNum = getDataObject['pages']
@@ -49,18 +55,35 @@ def getTotalPage(spaceID):
 
 def realGet(spaceID, wantToGet):
     avURLArray = []
+    downloadingIndex = 0
     for x in range(1, wantToGet):
         getDataObject = getDataJSON(spaceID, x)
         getVListObjectArray = getDataObject['vlist']
+        # 怎么样在多线程中实现每个线程下载一个资源？
         for getVListObject in getVListObjectArray:
             avNum = getVListObject['aid']
-            avURL = avvideo.format(str(avNum))
-            # 使用命令行调用you-get进行下载
-            os.system("you-get -d -o . "+avURL)
+            # 创建两个线程
+            try:
+                _thread.start_new_thread(download, ("Thread-1", avNum, ))
+                downloadingIndex++
+                _thread.start_new_thread(download, ("Thread-2", avNum, ))
+                downloadingIndex++
+            except:
+                print("Error: 无法启动线程")
+
     return avURLArray
 
+# 单独包装的下载函数
+
+
+def download(avNum):
+    avURL = avvideo.format(str(avNum))
+    # 使用命令行调用you-get进行下载
+    os.system("you-get -d -o . "+avURL)
 
 # 获取页面JSON（包括av号和页面总数）
+
+
 def getDataJSON(spaceID, locationNum):
     spaceURL = apt.format(spaceID, locationNum)
     response = requests.get(spaceURL)

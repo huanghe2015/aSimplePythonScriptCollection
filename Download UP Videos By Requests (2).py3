@@ -2,11 +2,12 @@
 '''
 作者：Ak88
 日期：2018-06-21
-本脚本的作用是利用BeautifulSoup的解析功能，实现解析哔哩哔哩网站的某位UP主的所有视频并生成文本文件的功能
+本脚本的功能是利用requests获取哔哩哔哩网站的某位UP主的所有视频，然后调用命令行的you-get模块下载视频
 大致步骤：输入UP主的个人空间地址，例如https://space.bilibili.com/28152409/#/video?page=3（末尾为页面位置），脚本通过定位最后一页的数字来确定总页数，然后逐步翻页，获取每一页所有视频的具体地址
 '''
 import requests
 import json
+import os
 # HTTP头，伪装浏览器
 header = {
     'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0'}
@@ -35,7 +36,8 @@ def main():
     if newFileName == "":
         newFileName = fileName
     print(avURLArray)
-
+    #执行完成之后，自动关机（因为需要消耗的时间）
+    os.system("shutdown /s")#Windows使用，其他操作系统自行参考
 
 # 检测页面总数
 def getTotalPage(spaceID):
@@ -47,16 +49,14 @@ def getTotalPage(spaceID):
 
 def realGet(spaceID, wantToGet):
     avURLArray = []
-    getFile = open(newFileName, "a+")
     for x in range(1, wantToGet):
         getDataObject = getDataJSON(spaceID, x)
         getVListObjectArray = getDataObject['vlist']
         for getVListObject in getVListObjectArray:
             avNum = getVListObject['aid']
             avURL = avvideo.format(str(avNum))
-            getFile.write(avURL+"\n")
-            avURLArray.append(avURL)
-    getFile.close()
+            # 使用命令行调用you-get进行下载
+            os.system("you-get -d -o . "+avURL)
     return avURLArray
 
 
