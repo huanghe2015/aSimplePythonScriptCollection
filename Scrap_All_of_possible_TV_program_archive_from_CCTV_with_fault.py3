@@ -30,19 +30,21 @@ end = datetime.date(2017, 9, 20).today()
 
 '''
 处理公用函数
+功能描述：
 '''
 
 
-def getProgramText(scrapAddressFormat):
+def getProgramText(scrapAddressFormat, programNameRegex):
         # 遍历从上面描述的时间点开始，到昨天结束
+    globalRegex = "\d{8}"
     for i in range((end - begin).days):
         day = begin + datetime.timedelta(days=i)
         dayStr = day.strftime('%Y%m%d')
         scrapAddress = scrapAddressFormat.format(dayStr)
-        response = requests.get(scrapAddress)
+        response = requests.get(scrapAddress, headers=header)
         response.encoding = 'utf-8'
         soup = BeautifulSoup(response.text, 'html.parser')
-        soupRes = soup.find_all(text=re.compile("\u65b0\u95fb\u8054\u64ad"))
+        soupRes = soup.find_all(text=re.compile(globalRegex))
         # 如果没找到相应的元素，就跳过
         if len(soupRes) == 0:
             continue
@@ -52,14 +54,15 @@ def getProgramText(scrapAddressFormat):
 '''
 新闻联播的处理函数
 处理步骤：新闻联播的处理分为两步：第一步是从返回的网页中提取链接，并且尝试从文本中筛选出时间，不行就执行第二步；
-第二步是从链接获取的网页中提取时间。如果是19:00，则认为没有问题；如果是21:00，则认为出现失误，其他则为异常，记录下来分析原因。
+第二步是从链接获取的网页中提取时间。如果是19:00，则认为没有问题；如果只有21:00，则认为出现失误，其他则为异常，记录下来分析原因。
 '''
 
 
 def xwlb():
-    # 新闻联播节目地址格式（括号里为节目日期）
+        # 新闻联播节目地址格式（括号里为节目日期）
     xwlbProgramAddress = 'http://tv.cctv.com/lm/xwlb/day/{}.shtml'
-    getProgramText(xwlbProgramAddress)
+    programNameRegex = "\u65b0\u95fb\u8054\u64ad"
+    getProgramText(xwlbProgramAddress, programNameRegex)
 
 
 '''
